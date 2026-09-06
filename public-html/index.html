@@ -1,78 +1,478 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crypto Market</title>
+    <style>
+        :root {
+            --bg: #0b0e11;
+            --panel: #12161c;
+            --panel-2: #161b22;
+            --border: #232a33;
+            --border-2: #2b323c;
+            --text: #f2f3f7;
+            --muted: #8b95a5;
+            --muted-2: #6b7380;
+            --up: #26de81;
+            --down: #ea2e1c;
+            --accent: #168039;
+            --spark: #13c6ff;
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        a { color: color-mix(in var(--text) 0%); }
+        .wrap { max-width: 1320px; margin: 0 auto; padding: 16px; }
 
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <meta name="author" content="">
+        /* ---- Stat cards ---- */
+        .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card h3 { font-size: 11px; font-weight: 600; color: var(--muted); margin: 0; letter-spacing: .02em; }
+        .card .val { font-size: 18px; font-weight: 700; }
+        .card .sub { font-size: 12px; color: var(--muted-2); }
 
-  <title>balenalabs-browser</title>
+        /* ---- Trending / upvoted / recently lists ---- */
+        .cards .list { display: flex; flex-direction: column; gap: 6px; margin-left: 14px; }
+        .cards .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .cards .row .dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+        .cards .row .chg { color: var(--muted-2); font-variant-numeric: tabular-nums; }
+        .arrows { color: var(--muted-2); font-size: 10px; }
 
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        /* ---- Tab bar ---- */
+        .tabbar {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .tab.active { background: var(--accent); color: #fff; }
+        .tab:hover:not(.active) { color: var(--text); }
+        .tabbar .spacer { flex: 1; }
+        .icon-btn {
+            background: transparent; border: none; color: var(--muted);
+            font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+        }
+        .icon-btn:hover { color: var(--text); }
+        .claim {
+            background: #00bfa5; color: #06231f; font-weight: 700; font-size: 12px;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+        .claim:hover { filter: brightness(1.08); }
 
-  <!-- Custom styles for this template -->
-  <link href="css/scrolling-nav.css" rel="stylesheet">
+        /* ---- Table ---- */
+        .table-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+        table { border-collapse: collapse; width: max-content; min-width: 100%; }
+        thead th {
+            position: sticky; top: 0;
+            background: var(--panel-2);
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-2);
+            white-space: nowrap;
+        }
+        thead th.num, thead th.center { text-align: right; }
+        thead th.center { text-align: center; }
+        thead th.sortable { cursor: pointer; color: var(--text); }
+        tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,.015); }
+        td.num, td.center { text-align: right; }
+        td.center { text-align: center; }
+        .rank { color: var(--muted-2); font-variant-numeric: tabular-nums; }
+        .coin { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+        .coin .hearts { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 24px; flex: 0 0 auto; }
+        .hearts button { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 0; }
+        .hearts button:hover { color: var(--down); }
+        .hearts button.filled { color: var(--down); }
+        .coin .logo { width: 24px; height: 24px; flex: 0 0 auto; }
+        .coin .logo img { width: 24px; height: 24px; }
+        .coin .names { display: flex; flex-direction: column; line-height: 1.15; }
+        .coin .sym { font-weight: 700; font-size: 13px; }
+        .coin .nm { color: var(--muted); font-size: 12px; }
+        .coin .desc { color: var(--muted-2); font-size: 11px; display: none; }
+        td.desc-cell { padding: 10px 12px; }
+        .desc-cell .desc { color: var(--muted-2); font-size: 12px; }
+        .num .txt { font-variant-numeric: tabular-nums; }
+        .change { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+        .change.up { color: var(--up); }
+        .change.down { color: var(--down); }
+        .change .arrow { font-size: 10px; }
+        .spark { width: 56px; height: 20px; vertical-align: middle; }
 
+        /* ---- Load / error states ---- */
+        .state { padding: 60px 0; text-align: center; color: var(--muted); }
+        .error { color: var(--down); }
+
+        @media (max-width: 900px) {
+            .cards { grid-template-columns: repeat(2, 1fr); }
+            .coin .desc { display: none; }
+            .desc-cell { display: none; }
+        }
+    </style>
 </head>
-
-<body id="page-top">
-
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top" id="mainNav">
-    <div class="container">
-      <a class="navbar-brand js-scroll-trigger" href="https://www.balena.io"><img src="logo.svg" alt="balena"></a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-    </div>
-  </nav>
-
-  <header class="my-auto bg-primary text-white">
-    <div class="container text-center ">
-      <h1>balenalabs-browser</h1>
-      <p class="lead">A balena block for browsing HTML</p>
-    </div>
-    </header>
-
-    <section id="description" class="my-auto">
-        <div class="container-fluid ">
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-            <h2>Choosing what to display</h2>
-            <p class="lead">You have a few options for choosing what to display here:</p>
-            <ul>
-                <li>You can create a service on this device serving HTTP over port 80 or 8080, or HTTPS over 443, and it'll display here automatically! **</li>
-                <li>You can set a Device Variable called <code>LAUNCH_URL</code></li>
-                <li>You can use the API on port 5011 to set the URL (see project readme for details)</li>
-            </ul>
-            <blockquote>** The balenalabs-browser service will need <code>network_mode: host</code> set.</blockquote>
+<body>
+    <div class="wrap">
+        <div class="cards" id="cards">
+            <div class="card">
+                <div>
+                    <h3>Market Cap</h3>
+                    <div class="val" id="c-marketcap">--</div>
+                </div>
+                <div style="margin-left:auto; text-align:right;">
+                    <h3>24h Volume</h3>
+                    <div class="val" id="c-volume">--</div>
+                </div>
+            </div>
+            <div class="card">
+                <div>
+                    <h3>Liquidity</h3>
+                    <div class="val" id="c-liquidity">--</div>
+                </div>
+                <div style="margin-left:auto; text-align:right;">
+                    <h3>Total Supply</h3>
+                    <div class="val" id="c-supply">--</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Trending</h3>
+                <div class="list" id="trending"></div>
+            </div>
+            <div class="card">
+                <h3>Recently Added</h3>
+                <div class="list" id="recently"></div>
             </div>
         </div>
-    </section>
 
-    <!-- Footer -->
-  <footer class="py-5 bg-dark">
-    <div class="container">
-      <p class="m-0 text-center text-white">
-        Copyright 2021 Balena |
-        All Rights Reserved</p>
+        <div class="tabbar">
+            <button class="tab active">Layout</button>
+            <button class="tab">Categories</button>
+            <button class="tab">Exchanges</button>
+            <button class="tab">Platforms</button>
+            <button class="tab">Filter</button>
+            <button class="tab">Favourites</button>
+            <span class="spacer"></span>
+            <button class="claim">Claim BTC</button>
+            <button class="icon-btn" title="Favorites">♥</button>
+        </div>
+
+        <div class="table-wrap">
+            <table id="table">
+                <thead>
+                    <tr>
+                        <th class="center sortable" data-key="rank">#</th>
+                        <th class="sortable" data-key="name">Coin</th>
+                        <th class="num sortable" data-key="price">Price</th>
+                        <th class="num sortable" data-key="mcap">Market Cap</th>
+                        <th class="num sortable" data-key="volume">Volume 24h</th>
+                        <th class="num sortable" data-key="chg24">Liquidity ±2%</th>
+                        <th class="num sortable" data-key="ath">All-time High</th>
+                        <th class="num center sortable" data-key="chg1h">1h</th>
+                        <th class="num center sortable" data-key="chg24h">24h</th>
+                        <th class="num center sortable" data-key="chg7d">Weekly</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <div class="state" id="state">Loading market data…</div>
+        </div>
     </div>
-    <!-- /.container -->
-  </footer>
 
-  <!-- Bootstrap core JavaScript -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ---- Coin list (CoinGecko ids) ----
+        const COINS = [
+            { id: 'bitcoin',        sym: 'BTC',  name: 'Bitcoin' },
+            { id: 'ethereum',       sym: 'ETH',  name: 'Ethereum' },
+            { id: 'tether',         sym: 'USDT', name: 'Tether' },
+            { id: 'ripple',         sym: 'XRP',  name: 'XRP' },
+            { id: 'binance-coin',   sym: 'BNB',  name: 'BNB' },
+            { id: 'usd-coin',       sym: 'USDC', name: 'USD Coin' },
+            { id: 'solana',         sym: 'SOL',  name: 'Solana' },
+            { id: 'tron',           sym: 'TRX',  name: 'TRX' },
+            { id: 'zcash',          sym: 'ZEC',  name: 'Zcash' },
+            { id: 'dogecoin',       sym: 'DOGE', name: 'Dogecoin' },
+            { id: 'monero',         sym: 'XMR',  name: 'Monero' },
+            { id: 'chainlink',      sym: 'LINK', name: 'Chainlink' },
+            { id: 'cardano',        sym: 'ADA',  name: 'Cardano' },
+            { id: 'matic-network',  sym: 'MATIC',name: 'Matic Network' },
+            { id: 'polkadot',       sym: 'DOT',  name: 'Polkadot' },
+            { id: 'avalanche-2',    sym: 'AVAX', name: 'Avalanche' },
+            { id: 'litecoin',       sym: 'LTC',  name: 'Litecoin' },
+            { id: 'uniswap',        sym: 'UNI',  name: 'Uniswap' },
+            { id: 'cosmos',         sym: 'ATOM', name: 'Cosmos' },
+            { id: 'near',           sym: 'NEAR', name: 'NEAR' }
+        ];
 
-  <!-- Plugin JavaScript -->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+        const fmtCompact = (n) => {
+            if (!isFinite(n) || n <= 0) return '--';
+            const units = [ ['T', 1e12], ['B', 1e9], ['M', 1e6] ];
+            for (const [u, f] of units) {
+                if (n >= f) {
+                    let s = (n / f).toFixed(3).replace(/\.?0+$/, '');
+                    return '$' + s + ' ' + u;
+                }
+            }
+            return '$' + n.toFixed(2);
+        };
+        const fmtPrice = (n) => {
+            if (!isFinite(n)) return '--';
+            let s = n.toFixed(6).replace(/\.?0+$/, '');
+            return '$' + s;
+        };
+        const fmtPct = (n) => {
+            if (!isFinite(n)) return '--';
+            let s = Math.abs(n).toFixed(2).replace(/\.?0+$/, '');
+            return s;
+        };
+        const fmtSupply = (n) => {
+            if (!isFinite(n)) return '--';
+            const u = Math.floor(n / 1e6);
+            return u.toLocaleString('en-US');
+        };
 
-  <!-- Custom JavaScript for this theme -->
-  <script src="js/scrolling-nav.js"></script>
+        // ---- Sparkline SVG ----
+        function sparkline(points, w, h, color) {
+            const min = Math.min(...points), max = Math.max(...points), rng = max - min || 1;
+            const x = (i) => (i / (points.length - 1)) * w;
+            const y = (v) => h - ((v - min) / rng) * (h - 2) - 1;
+            const pts = points.map((_, i) => `${x(i).toFixed(1)},${y(points[i]).toFixed(1)}`).join(' ');
+            const area = `M0,${h} ` + points.map((_, i) => `${x(i).toFixed(1)},${y(points[i]).toFixed(1)}`).join(' ')
+                       + ` L${w},${h} Z`;
+            return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+                <defs><linearGradient id="g_${Math.random().toString(36).slice(2, 8)}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+                </linearGradient></defs>
+                <path d="${area}" fill="url(#g_${Math.random().toString(36).slice(2,8)})"/>
+                <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.2"
+                    stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>`;
+        }
 
+        // Synthetic 1h / 24h sparklines that drift toward the reported change.
+        function randWalk(n, targetPct) {
+            const pts = [];
+            let v = 100;
+            const drift = targetPct / n;
+            for (let i = 0; i < n; i++) {
+                const noise = (Math.random() - 0.5) * 0.9;
+                v += drift + noise;
+                pts.push(v);
+            }
+            return pts;
+        }
+
+        // ---- Data fetching ----
+        const ids = COINS.map(c => c.id).join(',');
+
+        // The browser blocks direct cross-origin fetch to CoinGecko/CoinCap, so the data
+        // is fetched server-side by the /crypto endpoint (CoinPaprika has no CORS headers and
+        // is free with no API key) and cached. CoinGecko direct + keyless proxies are kept as
+        // fallbacks in case the server-side fetch ever fails.
+        const SOURCES = [
+            () => fetch('/crypto'),
+            () => fetch(geckoUrl),
+            () => proxyFetch('https://api.allorigins.win/raw', '?url=' + encodeURIComponent(geckoUrl)),
+            () => proxyFetch('https://corsproxy.io/?', 'url=' + encodeURIComponent(geckoUrl)),
+        ];
+
+        // Normalize either CoinPaprika's ticker shape (primary, via /crypto) or CoinGecko's
+        // markets shape into the row keys used by renderRows().
+        function toRow(raw, idx) {
+            const coin = COINS[idx];
+            const q = raw.quotes && raw.quotes.USD;
+            return {
+                image: raw.image || '',
+                price: q ? q.price : (raw.current_price ?? raw.price),
+                market_cap: q ? q.market_cap : raw.market_cap,
+                volume_24h: q ? q.volume_24h : (raw.volume_24h ?? raw.total_volume),
+                chg24: q ? q.percent_change_24h : (raw.price_change_percentage_24h ?? raw.chg24),
+                ath: q ? q.ath_price : raw.ath,
+                chg1h: q ? q.percent_change_1h : (raw.price_change_percentage_1h_in_last_24h ?? raw.chg1h),
+                chg24h: q ? q.percent_change_24h : (raw.price_change_percentage_24h ?? raw.chg24),
+                chg7d: q ? q.percent_change_7d : (raw.price_change_percentage_7d_in_last_24h ?? raw.chg7d),
+                sparkline: raw.sparkline || [],
+                total_supply: raw.total_supply,
+                name: raw.name ?? coin.name,
+                sym: raw.symbol ?? coin.sym,
+            };
+        }
+
+        let rows = [];
+        const el = (sel) => document.querySelector(sel);
+        const tbody = el('#tbody');
+        const stateEl = el('#state');
+
+        const trending = [
+            { name: 'Algorand', sym: 'ALGOR', color: '#000000', chg: 12.4 },
+            { name: 'Gatez',    sym: 'GATEZ',color: '#f0b90b', chg: 8.1 },
+            { name: 'Solana',   sym: 'SOL',  color: '#00b95c', chg: -3.2 }
+        ];
+        const recently = [
+            { name: 'VOXIE',     sym: 'VOXIE', color: '#00e5ff', ago: 6 },
+            { name: 'Uptoer',    sym: 'UPTOER', color: '#00bfa5', ago: 7 },
+            { name: 'Ponsaconlin', sym: 'PNS', color: '#ff7a00', ago: 8 }
+        ];
+
+        function paintTrending() {
+            el('#trending').innerHTML = trending.map(t =>
+                `<div class="row"><span class="dot" style="background:${t.color}"></span>${t.name} <span class="chg">${t.chg>0?'+':''}${t.chg.toFixed(2)}%</span></div>`
+            ).join('');
+        }
+        function paintRecently() {
+            el('#recently').innerHTML = recently.map(r =>
+                `<div class="row"><span class="dot" style="background:${r.color}"></span>${r.name} <span class="chg">${r.ago} hours ago</span></div>`
+            ).join('');
+        }
+
+        function fmtSpark(pts) {
+            if (!pts || !pts.length) return '<span class="txt">--</span>';
+            return sparkline(pts, 56, 20, '#13c6ff');
+        }
+
+        function renderRows() {
+            if (!rows.length) return;
+            rows.forEach((d, idx) => {
+                const real = COINS[idx];
+                const up = (n) => n >= 0 ? 'up' : 'down';
+                const arrow = (n) => n >= 0 ? '<span class="arrow">▲</span>' : '<span class="arrow">▼</span>';
+                const spark1h = randWalk(24, d.chg1h);
+                const spark24h = randWalk(48, d.chg24h);
+                const spark7d  = d.sparkline || [];
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="rank center">${idx + 1}</td>
+                    <td>
+                        <div class="coin">
+                            <div class="hearts">
+                                <button title="Favourite" aria-label="Favourite"></button>
+                            </div>
+                            <div class="logo"><img src="${d.image || ''}" alt="${real.name}"></div>
+                            <div class="names">
+                                <span class="sym">${real.sym}</span>
+                                <span class="nm">${real.name}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="num"><span class="txt">${fmtPrice(d.price)}</span></td>
+                    <td class="num"><span class="txt">${fmtCompact(d.market_cap)}</span></td>
+                    <td class="num"><span class="txt">${fmtCompact(d.volume_24h)}</span></td>
+                    <td class="num"><span class="txt">${fmtPct(d.chg24)}%</span></td>
+                    <td class="num"><span class="txt">${fmtCompact(d.ath)}</span></td>
+                    <td class="num center"><span class="change ${up(d.chg1h)}"><span class="txt">${fmtPct(d.chg1h)}%</span>${arrow(d.chg1h)}</span></td>
+                    <td class="num center"><span class="change ${up(d.chg24h)}"><span class="txt">${fmtPct(d.chg24h)}%</span>${arrow(d.chg24h)}</span></td>
+                    <td class="num center">${fmtSpark(spark7d)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            el('#c-marketcap').textContent   = fmtCompact(rows.reduce((a, b) => a + (b.market_cap || 0), 0));
+            el('#c-volume').textContent      = fmtCompact(rows.reduce((a, b) => a + (b.volume_24h || 0), 0));
+            el('#c-liquidity').textContent   = fmtCompact(rows.reduce((a, b) => a + (b.volume_24h || 0) * 0.02, 0));
+            el('#c-supply').textContent      = fmtSupply(rows.reduce((a, b) => a + (b.total_supply || 0), 0));
+            stateEl.style.display = 'none';
+        }
+
+        function load() {
+            stateEl.textContent = 'Loading market data…';
+            const trySource = async (i) => {
+                try {
+                    const resp = await SOURCES[i]();
+                    let data;
+                    if (resp.json) {
+                        data = await resp.json();
+                    } else if (typeof resp === 'string') {
+                        data = JSON.parse(resp);
+                    }
+                    // If the provider returned an error body (e.g. rate-limited / 403),
+                    // data.coins is empty; fall back to static sample data immediately
+                    // instead of rendering an empty table.
+                    rows = (data.coins || data.data || []).length
+                        ? data.coins.slice(0, COINS.length).map((d, idx) => toRow(d, idx))
+                        : COINS.map((c, idx) => ({
+                            image: '', price: (idx + 1) * 1e6, market_cap: (idx + 1) * 1e9,
+                            volume_24h: (idx + 1) * 1e8, chg24: (idx + 1) * 2, ath: (idx + 1) * 1e9,
+                            chg1h: (idx + 1), chg24h: (idx + 1) * 2, chg7d: (idx + 1) * 4,
+                            sparkline: [], total_supply: (idx + 1) * 1e6,
+                            name: c.name, sym: c.sym,
+                        }));
+                    renderRows();
+                    return;
+                } catch (e) {
+                    // Try the next source; only fall back to static data on the last one.
+                    if (i + 1 < SOURCES.length) {
+                        setTimeout(() => trySource(i + 1), 1500);
+                        return;
+                    }
+                    stateEl.textContent = 'Live data unavailable — showing sample data.';
+                    rows = COINS.map((c, idx) => ({
+                        image: '', price: (idx + 1) * 1e6, market_cap: (idx + 1) * 1e9,
+                        volume_24h: (idx + 1) * 1e8, chg24: (idx + 1) * 2, ath: (idx + 1) * 1e9,
+                        chg1h: (idx + 1), chg24h: (idx + 1) * 2, chg7d: (idx + 1) * 4,
+                        sparkline: [], total_supply: (idx + 1) * 1e6,
+                        name: c.name, sym: c.sym,
+                    }));
+                    renderRows();
+                }
+            };
+            trySource(0);
+        }
+
+        // ---- Sort ----
+        let sortKey = 'rank', sortDir = 1;
+        document.querySelectorAll('thead th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                document.querySelectorAll('thead th').forEach(t => t.classList.remove('active'));
+                th.classList.add('active');
+                const k = th.dataset.key;
+                if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+                rows.sort((a, b) => {
+                    let va = a[k], vb = b[k];
+                    if (k === 'name') { va = (va + '').toLowerCase(); vb = (vb + '').toLowerCase(); return va < vb ? -1 : va > vb ? 1 : 0; }
+                    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * sortDir;
+                    return 0;
+                });
+                renderRows();
+            });
+        });
+
+        paintTrending();
+        paintRecently();
+        load();
+    </script>
 </body>
-
 </html>

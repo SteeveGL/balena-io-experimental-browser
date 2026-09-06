@@ -10,6 +10,7 @@ const {
 } = require('set-interval-async/dynamic')
 const { spawn } = require('child_process');
 const { readFile, unlink } = require('fs').promises;
+const { execFile } = require('child_process');
 const path = require('path');
 const os = require('os');
 
@@ -287,6 +288,60 @@ app.post('/url', (req, res) => {
 app.get('/url', (req, res) => {
     
   return res.status(200).send(currentUrl);
+});
+
+// crypto market data endpoint (fetched server-side to bypass browser CORS).
+// CoinPaprika has no CORS headers and is free (no API key), so it is fetched
+// server-side here and cached, then returned to the browser as { coins: [...] }.
+// Mapping of CoinGecko ids (used by the dashboard) -> CoinPaprika ids.
+const COINPAPIKA_IDS = {
+  'bitcoin': 'bitcoin-bitcoin',
+  'ethereum': 'eth-ethereum',
+  'tether': 'usdt-tether',
+  'ripple': 'xrp-xrp',
+  'binance-coin': 'bnb-binance-coin',
+  'usd-coin': 'usdc-usd-coin',
+  'solana': 'sol-solana',
+  'tron': 'trx-tron',
+  'zcash': 'zec-zcash',
+  'dogecoin': 'doge-dogecoin',
+  'monero': 'xmr-monero',
+  'chainlink': 'link-chainlink',
+  'cardano': 'ada-cardano',
+  'matic-network': 'matic-matic-network',
+  'polkadot': 'dot-polkadot',
+  'avalanche-2': 'avax-avalanche',
+  'litecoin': 'ltc-litecoin',
+  'uniswap': 'uni-uniswap',
+  'cosmos': 'atom-cosmos',
+  'near': 'near-near'
+};
+let cryptoCache = null;
+let cryptoCacheMs = 0;
+const CRYPTO_CACHE_TTL_MS = 5 * 60 * 1000; // refresh every 5 minutes
+
+app.get('/crypto', async (req, res) => {
+  // Return cached data if it is still fresh.
+  if (cryptoCache && Date.now() - cryptoCacheMs < CRYPTO_CACHE_TTL_MS) {
+    return res.status(200).json(cryptoCache);
+  }
+  try {
+    const ids = Object.values(COINPAPIKA_IDS).join(',');
+    const url = `https://api.coinpaprika.com/v1/tickers?start=${ids}&limit=${Object.keys(COINPAPIKA_IDS).length}`;
+    // bent with {json:true} returns a Promise; the endpoint is async so we await it.
+    const data = await bent(url, { json: true });
+    // Filter to the coins we want (CoinPaprika may return extra/missing tickers).
+    const coins = Object.values(COINPAPIKA_IDS).map((id, idx) =>
+      data[idx] || data.find(t => t.id === id)
+    ).filter(Boolean);
+    console.log('crypto:', coins.length, 'coins', coins.slice(0,2).map(c=>c.name));
+    cryptoCache = coins;
+    cryptoCacheMs = Date.now();
+    return res.status(200).json({ coins });
+  } catch (e) {
+    cryptoCache = null;
+    return res.status(500).json({ error: e.message });
+  }
 });
 
 // refresh endpoint
