@@ -41,8 +41,8 @@ RUN chmod +x ./*.sh
 
 ENV UDEV=1
 
-RUN mkdir -p /etc/chromium/policies
-RUN mkdir -p /etc/chromium/policies/managed
+RUN mkdir -p /etc/chromium/policies/
+RUN mkdir -p /etc/chromium/policies/managed/
 COPY ./policy.json /etc/chromium/policies/managed/my_policy.json
 
 # Add chromium user

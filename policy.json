@@ -1,8 +1,8 @@
 {
-    "HomepageLocation": "www.balena.io",
-    "ExtensionInstallForcelist": [
-    "aleakchihdccplidncghkekgioiakgal",
-    "cjpalhdlnbpafiamejdnhcphjbkeiagm",
-    "ofpnikijgfhlmmjlpkfaifhhdonchhoi"
-    ]
+  "HomepageLocation": "https://balena.io",
+  "ExtensionInstallForcelist": [
+    "aleakchihdccplidncghkekgioiakgal;https://google.com",
+    "cjpalhdlnbpafiamejdnhcphjbkeiagm;https://google.com",
+    "ofpnikijgfhlmmjlpkfaifhhdonchhoi;https://google.com"
+  ]
 }
