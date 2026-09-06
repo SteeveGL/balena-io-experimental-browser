@@ -5,9 +5,16 @@ volumes:
 
 services:
 
+  # browser:
+  #   build: .
+  #   privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+  #   network_mode: host
+  #   volumes:
+  #     - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+
   browser:
-    build: .
-    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
-    network_mode: host
+    restart: always
+    image: bh.cr/balenalabs/browser-aarch64
+    privileged: true
     volumes:
-      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+      - 'settings:/data'
