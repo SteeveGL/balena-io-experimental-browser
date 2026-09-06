@@ -4,19 +4,17 @@ volumes:
   settings:                          # Only required if using PERSISTENT flag (see below)
 
 services:
+  browser:
+    build: .
+    volumes:
+      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+    network_mode: host
+    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+    restart: always
 
   # browser:
-  #   build: .
-  #   privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
-  #   network_mode: host
+  #   restart: always
+  #   image: bh.cr/balenalabs/browser-aarch64
+  #   privileged: true
   #   volumes:
-  #     - 'settings:/data' # Only required if using PERSISTENT flag (see below)
-
-  browser:
-    restart: always
-    image: bh.cr/balenalabs/browser-aarch64
-    environment:
-      - CHROMIUM_FLAGS=--allow-pre-stable-device-extensions --disable-component-update
-    privileged: true
-    volumes:
-      - 'settings:/data'
+  #     - 'settings:/data'
